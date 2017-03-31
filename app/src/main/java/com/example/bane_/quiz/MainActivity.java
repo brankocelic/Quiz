@@ -38,11 +38,12 @@ public class MainActivity extends AppCompatActivity {
 
         score1 = (TextView) findViewById(R.id.score1);
 
-
+    if(finalScore.getBoolean("uslov",false)) {
         sort(storage.getString("name", ""), finalScore.getString("score", ""));
 
         score1.setText(storage.getString("end", ""));
-
+        }
+        finalScore.getBoolean("uslov",false);
     }
 
     public void onClic(View view) {
@@ -58,9 +59,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sort(String names, String record) {
-        edit = storage.edit();
+//        edit = storage.edit();
+//        allScores = returnArray(allScores, score1);
+//        if (allScores.size() != 0) {
+//            for (int i = 0; i < allScores.size() && i < 10; i++) {
+//                if (Integer.parseInt(record) > Integer.parseInt(allScores.get(i).substring(allScores.get(i).indexOf(':'), allScores.get(i).length()))) {
+//                    String newElemenofArray = "" + (i + 1) + "." + names + ":" + record;
+//                    names = allScores.get(i).substring(2, allScores.get(i).indexOf(':'));
+//                    record = allScores.get(i).substring(allScores.get(i).indexOf(':'), allScores.get(i).length());
+//                    allScores.set(i, newElemenofArray);
+//                }
+//            }
+//        } else if (!record.equals("")) {
+//            allScores.add("1." + names + ":" + record);
+//        }
+//        if (allScores.size() != 0) {
+//            for (int i = 0; i < allScores.size() ; i++)
+//                score1.setText(score1.getText().toString() + '\n' + allScores.get(i));
+//        }
+//        edit.putString("end", score1.getText().toString());
+//        edit.apply();
         allScores = returnArray(allScores, score1);
-        if (allScores.size() != 0) {
+        if (allScores.size() == 0) allScores.add("123." + names + ":" + record);
+        else {
             for (int i = 0; i < allScores.size() && i < 10; i++) {
                 if (Integer.parseInt(record) > Integer.parseInt(allScores.get(i).substring(allScores.get(i).indexOf(':'), allScores.get(i).length()))) {
                     String newElemenofArray = "" + (i + 1) + "." + names + ":" + record;
@@ -69,22 +90,24 @@ public class MainActivity extends AppCompatActivity {
                     allScores.set(i, newElemenofArray);
                 }
             }
-        } else if (!record.equals("")) {
-            allScores.add("1." + names + ":" + record);
         }
-        if (allScores.size() != 0) {
-            for (int i = 0; i < allScores.size() ; i++)
-                score1.setText(score1.getText().toString() + '\n' + allScores.get(i));
-        }
+        ispisi();
+        edit = storage.edit();
         edit.putString("end", score1.getText().toString());
         edit.apply();
     }
+
     public ArrayList<String> returnArray(ArrayList<String> list, TextView score) {
         if (!score.getText().toString().equals("")) {
             String[] lines = score.getText().toString().split(System.getProperty("line.separator"));
             for (int i = 0; i < lines.length; i++) list.add(lines[i]);
         }
         return list;
+    }
+    public void ispisi()
+    {
+        score1.setText(allScores.get(0));
+        if(allScores.size()>1) for(int i=1;i<allScores.size();i++) score1.setText(score1.getText().toString()+"\n"+allScores.get(i));
     }
 
 }

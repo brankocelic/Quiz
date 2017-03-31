@@ -195,7 +195,7 @@ public class Main2Activity extends AppCompatActivity {
             SharedPreferences.Editor edit = finalScore.edit();
 
             edit.putString("score", score.getText().toString().substring(score.getText().toString().indexOf(':') + 1, score.getText().toString().length()));
-//            edit.putString("numberOfSocres",""+(Integer.parseInt(finalScore.getString("numberOfSocres","")+1)));
+            edit.putBoolean("uslov",true);
             edit.apply();
             Intent goToFirstScreen = new Intent(this, MainActivity.class);
             startActivity(goToFirstScreen);
