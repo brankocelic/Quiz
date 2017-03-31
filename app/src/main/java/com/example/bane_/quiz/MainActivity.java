@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         sort(storage.getString("name", ""), finalScore.getString("score", ""));
+
         score1.setText(storage.getString("end", ""));
 
     }
@@ -57,36 +58,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sort(String names, String record) {
-        if(!record.equals("") && score1.getText().toString().equals(""))
-                allScores = returnArray(allScores, score1);
-                edit = storage.edit();
-                for (int i = 0; i < allScores.size() + 1 && i < 10; i++) {
-                    String[]result = allScores.get(i).split(":");
-                    if (result.length != 2) {
-                        allScores.add("" + (i + 1) + "." + names + ":" + record);
-                        break;
-                    }
-                    if (Integer.parseInt(result[1])>Integer.parseInt(record)) continue;
-                    else {
-                        String newName = result[0].substring(2, result[0].length());
-                        String newRecord = result[1];
-                        allScores.add("" + (i + 1) + "." + names + ":" + record);
-                        names = newName;
-                        record = newRecord;
-                    }
+        edit = storage.edit();
+        allScores = returnArray(allScores, score1);
+        if (allScores.size() != 0) {
+            for (int i = 0; i < allScores.size() && i < 10; i++) {
+                if (Integer.parseInt(record) > Integer.parseInt(allScores.get(i).substring(allScores.get(i).indexOf(':'), allScores.get(i).length()))) {
+                    String newElemenofArray = "" + (i + 1) + "." + names + ":" + record;
+                    names = allScores.get(i).substring(2, allScores.get(i).indexOf(':'));
+                    record = allScores.get(i).substring(allScores.get(i).indexOf(':'), allScores.get(i).length());
+                    allScores.set(i, newElemenofArray);
                 }
-                for (int i = 0; i < allScores.size(); i++) {
-                    score1.setText(score1.getText().toString() + '\n' + allScores.get(i));
-                }
-                edit.putString("end", score1.getText().toString());
-                edit.apply();
+            }
+        } else if (!record.equals("")) {
+            allScores.add("1." + names + ":" + record);
+        }
+        if (allScores.size() != 0) {
+            for (int i = 0; i < allScores.size() ; i++)
+                score1.setText(score1.getText().toString() + '\n' + allScores.get(i));
+        }
+        edit.putString("end", score1.getText().toString());
+        edit.apply();
     }
-
     public ArrayList<String> returnArray(ArrayList<String> list, TextView score) {
-        if(!score.getText().toString().equals("")) {
+        if (!score.getText().toString().equals("")) {
             String[] lines = score.getText().toString().split(System.getProperty("line.separator"));
             for (int i = 0; i < lines.length; i++) list.add(lines[i]);
-            System.out.println(list);
         }
         return list;
     }
