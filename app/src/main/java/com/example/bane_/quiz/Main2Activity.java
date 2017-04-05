@@ -1,10 +1,8 @@
 package com.example.bane_.quiz;
 
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -26,15 +24,16 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Main2Activity extends AppCompatActivity {
+    Random r;
     TextView question, score;
     Button answer1, answer2, answer3, answer4, nextQuestion;
-    int i = 4, j = 1, newQuestion;
-    int result = 0;
-    boolean answerd = false;
-    ArrayList<String> correctAnswers;
-    SharedPreferences finalScore;
-    Random r;
-    ArrayList<Integer> usedQuestions;
+    boolean answerd = false, lastquestion = false;
+    int result = 0, correctAnswer = 0;
+    // SharedPreferences finalScore;
+    ArrayList<Button> correctAnswersOfButtons;
+    ArrayList<String> questions, answers, correctAnswers;
+    ArrayList<Integer> correctAnswersNumbers, usedQuestions;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,16 +42,29 @@ public class Main2Activity extends AppCompatActivity {
 
         question = (TextView) findViewById(R.id.question);
         score = (TextView) findViewById(R.id.score);
-        finalScore = getSharedPreferences("storage", MODE_PRIVATE);
+        //finalScore = getSharedPreferences("storage", MODE_PRIVATE);
 
         usedQuestions = new ArrayList<>();
+        answers = new ArrayList<>();
+        questions = new ArrayList<>();
+        correctAnswers = new ArrayList<>();
+        correctAnswersNumbers = new ArrayList<>();
+        correctAnswersOfButtons = new ArrayList<>();
+
         answer1 = (Button) findViewById(R.id.answer1);
         answer2 = (Button) findViewById(R.id.answer2);
         answer3 = (Button) findViewById(R.id.answer3);
         answer4 = (Button) findViewById(R.id.answer4);
         nextQuestion = (Button) findViewById(R.id.nextQuestion);
 
-        new GetListOfCountryNames().execute();
+
+        correctAnswersOfButtons.add(answer1);
+        correctAnswersOfButtons.add(answer2);
+        correctAnswersOfButtons.add(answer3);
+        correctAnswersOfButtons.add(answer4);
+
+        new setScoresOrGetJSON().execute();
+
 
     }
 
@@ -138,57 +150,74 @@ public class Main2Activity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.GINGERBREAD)
     public void nextQuestion(View view) {
-     /*   if (answerd && questions.size() != j) {
+        if (answerd && !(usedQuestions.size() == questions.size())) {
             answer1.setBackgroundColor(Color.LTGRAY);
             answer2.setBackgroundColor(Color.LTGRAY);
             answer3.setBackgroundColor(Color.LTGRAY);
             answer4.setBackgroundColor(Color.LTGRAY);
-            j++;
+
+            r = new Random();
+
+            int randomQuestion = 0;
+
             while (true) {
-                newQuestion = r.nextInt(questions.size());
-                if (!usedQuestions.contains(newQuestion)) {
-                    question.setText(questions.get(newQuestion));
-                    answer1.setText(answer.get(newQuestion * 4));
-                    answer2.setText(answer.get(newQuestion * 4 + 1));
-                    answer3.setText(answer.get(newQuestion * 4 + 2));
-                    answer4.setText(answer.get(newQuestion * 4 + 3));
-                    answerd = false;
-                    usedQuestions.add(newQuestion);
-                    break;
-                }
-
+                randomQuestion = r.nextInt(questions.size());
+                if (!usedQuestions.contains(randomQuestion)) break;
             }
-        } else if (j == questions.size()) {
 
-            SharedPreferences.Editor edit = finalScore.edit();
+            question.setText(questions.get(randomQuestion));
+            answer1.setText(answers.get(randomQuestion * 4));
+            answer2.setText(answers.get(randomQuestion * 4 + 1));
+            answer3.setText(answers.get(randomQuestion * 4 + 2));
+            answer4.setText(answers.get(randomQuestion * 4 + 3));
 
-            edit.putString("score", score.getText().toString().substring(score.getText().toString().indexOf(':') + 1, score.getText().toString().length()));
-            edit.putBoolean("uslov",true);
-            edit.apply();
-            Intent goToFirstScreen = new Intent(this, MainActivity.class);
-            startActivity(goToFirstScreen);
-        }*/
+            usedQuestions.add(randomQuestion);
+            correctAnswers.add(correctAnswersOfButtons.get(correctAnswersNumbers.get(randomQuestion) - 1).getText().toString());
+
+            answerd = false;
+
+        }
+        else if(usedQuestions.size() == questions.size()){
+            SharedPreferences storage = getSharedPreferences("storage", MODE_PRIVATE);
+            new setScoresOrGetJSON().execute(storage.getString("name", ""), "" + result);
+            Intent mainActivity = new Intent(this, MainActivity.class);
+            startActivity(mainActivity);
+        }
     }
 
-    private class GetListOfCountryNames extends AsyncTask<String, Void, String> {
+    private class setScoresOrGetJSON extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... params) {
 
 
             String responseData = "";
-
+            HttpURLConnection con;
             try {
 
-                // Creating http request
-                URL obj = new URL("http://zoran.ogosense.net/api/get-questions");
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-                //add request header
-                con.setRequestMethod("GET");
+                if (lastquestion) {
+                    // Creating http request
+                    URL obj = new URL("http://zoran.ogosense.net/api/set-score");
+                    con = (HttpURLConnection) obj.openConnection();
 
-                // Send post request
-                con.setDoOutput(true);
-                con.setDoInput(true);
+                    //add request header
+                    con.setRequestMethod("POST");
+
+                    // Send post request
+                    con.setDoOutput(true);
+                    con.setDoInput(true);
+
+                    String urlParameters = "name=" + params[0] + "&score=" + params[1];
+
+                    DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+                    wr.writeBytes(urlParameters);
+                    wr.flush();
+                    wr.close();
+                } else {
+                    // Creating http request
+                    URL obj = new URL("http://zoran.ogosense.net/api/get-questions");
+                    con = (HttpURLConnection) obj.openConnection();
+                }
 
 
                 String line;
@@ -212,24 +241,33 @@ public class Main2Activity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-
             try {
-                JSONObject response = new JSONObject(result);
-                int numberOfQuestion=0;
-                Random r = new Random();
-                while (true) {
+                if (!lastquestion) {
+                    JSONObject response = new JSONObject(result);
 
-                    numberOfQuestion = r.nextInt(response.getJSONArray("data").length());
+                    for (int i = 0; i < response.getJSONArray("data").length(); i++) {
+                        questions.add(response.getJSONArray("data").getJSONObject(i).getString("question"));
+                        answers.add(response.getJSONArray("data").getJSONObject(i).getString("answer1"));
+                        answers.add(response.getJSONArray("data").getJSONObject(i).getString("answer2"));
+                        answers.add(response.getJSONArray("data").getJSONObject(i).getString("answer3"));
+                        answers.add(response.getJSONArray("data").getJSONObject(i).getString("answer4"));
+                        correctAnswer = Integer.parseInt(response.getJSONArray("data").getJSONObject(i).getString("correct_answer"));
+                        correctAnswersNumbers.add(correctAnswer);
+                    }
+                    r = new Random();
 
-                    if(!usedQuestions.contains(numberOfQuestion))break;
+                    int randomQuestion = r.nextInt(questions.size());
 
+                    question.setText(questions.get(randomQuestion));
+                    answer1.setText(answers.get(randomQuestion * 4));
+                    answer2.setText(answers.get(randomQuestion * 4 + 1));
+                    answer3.setText(answers.get(randomQuestion * 4 + 2));
+                    answer4.setText(answers.get(randomQuestion * 4 + 3));
 
+                    usedQuestions.add(randomQuestion);
+                    correctAnswers.add(correctAnswersOfButtons.get(correctAnswersNumbers.get(randomQuestion) - 1).getText().toString());
+                    lastquestion=true;
                 }
-                question.setText(response.getJSONArray("data").getJSONObject(numberOfQuestion).getString("question"));
-                answer1.setText(response.getJSONArray("data").getJSONObject(numberOfQuestion).getString("answer1"));
-                answer2.setText(response.getJSONArray("data").getJSONObject(numberOfQuestion).getString("answer2"));
-                answer3.setText(response.getJSONArray("data").getJSONObject(numberOfQuestion).getString("answer3"));
-                answer4.setText(response.getJSONArray("data").getJSONObject(numberOfQuestion).getString("answer4"));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
